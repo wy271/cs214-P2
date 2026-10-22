@@ -3,3 +3,41 @@ CS 214 Project 2: Word Occurence Count
 Authors:
 -  Weizhe Yuan (wy271)
 -  Trevor Vetrano (twv6)
+
+This program counts how many times each word appears across a set of
+files. It accepts files and directories as arguments. Directories are
+scanned recursively, and only files whose names end with the suffix
+chosen by -s (default .txt) are counted.
+
+Design Notes:
+- Word splitting is a state machine with an inside/outside flag plus a
+  pending hyphen that is only added to the word when the next byte is a
+  letter.
+- The current word is kept in a buffer that doubles its capacity when
+  full, so word length is unlimited.
+- Counts live in a dynamic array of (word, count) pairs that doubles
+  when full. Every word gets its own copy, because the word buffer is
+  reused for every word.
+- At the end qsort orders entries by count descending with ties in
+  lexicographic order, and the results are printed with write(), using
+  sprintf() for the numbers.
+- Every path goes through one function that calls stat() to classify
+  it; directories are scanned recursively with opendir() and readdir().
+- Entries whose names start with a period are skipped, which also
+  avoids recursing into "." and "..".
+- Files named on the command line are always counted, regardless of
+  their suffix, and suffix matching is literal (no dot is added).
+
+  Testing Strategy:
+1. Word rules: small inputs for each rule in the assignment, such as
+   foo-bar vs foo--bar, -foo, foo-, 'oo, don't, a2z, and Foo vs foo.
+   These check the hyphen, apostrophe, digit, and case rules directly,
+   since those are the easiest to get subtly wrong.
+2. Assignment examples: the inputs from sections 1.1 and 2.1, with the
+   output compared line by line against the expected output.
+3. Directory traversal: a tree matching section 1.3, to check suffix
+   filtering, hidden entries, and recursion into subdirectories. Also
+   -s .md and -s.md, and a file named directly on the command line.
+4. Block boundaries: BUFSIZE temporarily set to 8 so words get split
+   across read() calls, and the output must not change.
+5. Memory: valgrind reports 0 errors and 0 definitely-lost bytes.
